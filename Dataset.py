@@ -6,7 +6,7 @@ from torch.utils.data import Dataset, DataLoader, random_split, SubsetRandomSamp
 import os
 import numpy as np
 
-dataset_pth = "/home/xyq/DGKT/KT_Dataset"
+dataset_pth = "/KT_Dataset"
 
 
 class InfiniteDataLoader(DataLoader):
@@ -117,45 +117,29 @@ class KtDataset(Dataset):
 
 
 def generate_dataloader(full_dataset, fold, batch_size=32, target_data_num=None):
-    assert 1 <= fold <= 10, "Fold number must be between 1 and 10"
-
-    # 计算数据集的大小
     dataset_size = len(full_dataset)
-
-    # 生成数据集的所有索引
     indices = list(range(dataset_size))
 
-    # 打乱索引
-    np.random.seed(42)  # 固定随机种子以保证可重复性
+    np.random.seed(42)  
     np.random.shuffle(indices)
-
-    # 定义每个fold的大小
     fold_size = dataset_size // 10
 
-    # 划分测试集的索引
     test_start = (fold - 1) * fold_size
     test_end = fold * fold_size if fold < 10 else dataset_size
     test_indices = indices[test_start:test_end]
-
-    # 剩余的数据用来划分训练集和验证集
     remaining_indices = indices[:test_start] + indices[test_end:]
-
-    # 划分训练集和验证集的大小
     train_size = int(0.8 * len(remaining_indices))
 
-    # 划分训练集和验证集的索引
     if target_data_num is None:
         train_indices = remaining_indices[:train_size]
     else:
         train_indices = remaining_indices[:target_data_num]
     val_indices = remaining_indices[train_size:]
 
-    # 定义采样器
     train_sampler = SubsetRandomSampler(train_indices)
     val_sampler = SubsetRandomSampler(val_indices)
     test_sampler = SubsetRandomSampler(test_indices)
 
-    # 定义DataLoader
     train_loader = InfiniteDataLoader(full_dataset, batch_size=batch_size, sampler=train_sampler)
     val_loader = DataLoader(full_dataset, batch_size=batch_size, sampler=val_sampler, shuffle=False)
     test_loader = DataLoader(full_dataset, batch_size=batch_size, sampler=test_sampler, shuffle=False)
@@ -191,8 +175,3 @@ def get_dataset_names():
                    and d != "__pycache__"]
     return directories
 
-
-if __name__ == "__main__":
-    get_dataset_names()
-    exit()
-    load_data(["ASSIST09", "ASSIST17", "ALGEBRA05", "Junyi"], max_len=200, step_len=200, verbose=True, fold=1)
